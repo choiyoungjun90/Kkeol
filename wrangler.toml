@@ -1,0 +1,19 @@
+name = "kkeol"
+main = ".open-next/worker.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+assets = { directory = ".open-next/assets" }
+
+# ------------------------------------------------------------------
+# 1. 임시로 aden.닷컴 사용
+# ------------------------------------------------------------------
+[[routes]]
+pattern = "aden.닷컴"
+custom_domain = true
+
+[vars]
+NEXT_PUBLIC_SITE_URL = "https://aden.xn--mk1bu44c"
+NEXT_PUBLIC_SUPABASE_URL = "https://pjdnindfsrqdpukdaueb.supabase.co"
+NEXT_PUBLIC_SUPABASE_PROVIDER = "https://vynwinnfltjgtkkgpjdnindfsrqdpukdauebbnct.supabase.co/auth/v1/callback"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqZG5pbmRmc3JxZHB1a2RhdWViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMzU3MDksImV4cCI6MjA4NTgxMTcwOX0.BPLy3zoJc24YtCBqV3azXtLuUYw9XTqvxIb-x1OHHu4"

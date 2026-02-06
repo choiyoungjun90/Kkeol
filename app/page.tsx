@@ -1,13 +1,31 @@
-import Calculator from '@/components/Calculator';
+"use client";
+
+import Calculator from "@/components/Calculator";
+import { useThemeStore } from "@/store/theme";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
+  const { mode } = useThemeStore();
+  const isPain = mode === "pain";
+
   return (
     <main className="flex-1 flex flex-col items-center justify-start pt-10 p-4 text-center space-y-6 overflow-y-auto pb-20">
       <div className="space-y-2 mb-4">
-        <h1 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white">
-          <span className="text-blue-600">살껄</span>. <span className="text-red-500">팔껄</span>.
+        <h1
+          className={cn(
+            "text-3xl font-black tracking-tighter transition-colors duration-300",
+            isPain ? "text-pain-text" : "text-base-text"
+          )}
+        >
+          <span className="text-primary">살껄</span>.{" "}
+          <span className="text-state-danger">팔껄</span>.
         </h1>
-        <p className="text-sm text-gray-500 font-medium">
+        <p
+          className={cn(
+            "text-sm font-medium transition-colors duration-300",
+            isPain ? "text-pain-subtext" : "text-base-subtext"
+          )}
+        >
           이미 지나간 버스, 요금이라도 확인해보자.
         </p>
       </div>
@@ -15,15 +33,34 @@ export default function Home() {
       <Calculator />
 
       <div className="w-full max-w-sm grid grid-cols-2 gap-3 px-4">
-           <button className="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-200 transition-colors">
-             🔥 실시간 투표
-           </button>
-           <button className="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-200 transition-colors">
-             🏆 명예의 전당
-           </button>
+        <button
+          className={cn(
+            "py-3 px-4 rounded-xl font-bold text-sm transition-colors duration-300",
+            isPain
+              ? "bg-pain-card text-pain-subtext hover:bg-gray-800"
+              : "bg-base-card text-base-subtext hover:bg-gray-100"
+          )}
+        >
+          🔥 실시간 투표
+        </button>
+        <button
+          className={cn(
+            "py-3 px-4 rounded-xl font-bold text-sm transition-colors duration-300",
+            isPain
+              ? "bg-pain-card text-pain-subtext hover:bg-gray-800"
+              : "bg-base-card text-base-subtext hover:bg-gray-100"
+          )}
+        >
+          🏆 명예의 전당
+        </button>
       </div>
 
-      <div className="pt-8 opacity-30 text-[10px]">
+      <div
+        className={cn(
+          "pt-8 opacity-30 text-[10px] transition-colors duration-300",
+          isPain ? "text-pain-subtext" : "text-base-subtext"
+        )}
+      >
         © 2026 Buy or Bye. 재미로만 보세요.
       </div>
     </main>

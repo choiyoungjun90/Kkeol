@@ -1,25 +1,128 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Pretendard", system-ui, sans-serif;
-  --color-primary: #3b82f6;
-  --color-secondary: #f43f5e;
+  /* Shadow 정의 (에러 해결용) */
+  --shadow-elev-1: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-elev-2: 0 4px 12px rgba(16, 24, 40, 0.12);
+  --shadow-elev-3: 0 20px 40px rgba(16, 24, 40, 0.25);
+  --shadow-dark-elev-1: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-dark-elev-2: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-dark-elev-3: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
+/* =========================
+   Theme Variables (가독성 강화)
+========================= */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-sans: "Pretendard", system-ui, sans-serif;
+
+  /* Base (Light) - 대비 상향 */
+  --background: #f8fafc; /* 더 투명한 Slate 50 */
+  --foreground: #020617; /* Slate 950 (완전 어두움) */
+  --card: #ffffff; /* 배경과 분리된 순백색 */
+  --border: #e2e8f0; /* 선명한 경계선 */
+  --subtext: #475569;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root[data-theme="pain"] {
+  /* Pain (Dark) - 수정본 */
+  /* 1. 배경: 기존 유지 (Deep Abyss) */
+  --background: #020617;
+  /* 2. 텍스트: 눈이 편안한 밝은 회색 (완전 화이트 X) */
+  --foreground: #f1f5f9;
+  /* 3. 카드: 배경보다 확실히 밝게 조정 (#1e293b -> #1e293b보다 살짝 밝은 톤 권장하지만, 보더를 죽이면 1e293b도 충분히 뜹니다)
+     - 여기서는 구분을 위해 살짝 더 밝은 Slate 컬러를 제안합니다. */
+  --card: #1e293b; /* 또는 좀 더 밝게 하려면 #263346 */
+  /* 4. 보더: 핵심 수정! (#94a3b8 -> #334155) 
+     - 보더 색상을 확 낮춰서(Slate 700) 카드 색상과 비슷하게 묻어가게 해야 합니다. */
+  --border: #334155;
+  /* 5. 서브텍스트: 너무 밝지 않게 */
+  --subtext: #64748b;
 }
 
+/* =========================
+   Base Reset
+========================= */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  min-height: 100vh;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+/* =========================
+   Component Presets
+========================= */
+
+.ui-card {
+  background-color: var(--card);
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  transition:
+    box-shadow 200ms ease,
+    transform 150ms ease;
+}
+
+/* Elevation 에러 해결을 위해 var() 또는 theme() 수정 */
+.ui-card.elev-1 {
+  box-shadow: var(--shadow-elev-1);
+}
+.ui-card.elev-2 {
+  box-shadow: var(--shadow-elev-2);
+}
+.ui-card.elev-3 {
+  box-shadow: var(--shadow-elev-3);
+}
+
+:root[data-theme="pain"] .ui-card.elev-1 {
+  box-shadow: var(--shadow-dark-elev-1);
+}
+:root[data-theme="pain"] .ui-card.elev-2 {
+  box-shadow: var(--shadow-dark-elev-2);
+}
+:root[data-theme="pain"] .ui-card.elev-3 {
+  box-shadow: var(--shadow-dark-elev-3);
+}
+
+/* 보조 텍스트 클래스 추가 */
+.text-sub {
+  color: var(--subtext);
+}
+
+/* Hover / Active */
+.ui-card:hover {
+  transform: translateY(-1px);
+}
+
+.ui-card:active {
+  transform: scale(0.985);
+}
+
+/* =========================
+   Button Preset
+========================= */
+.ui-button {
+  border-radius: 0.75rem;
+  transition:
+    background-color 150ms ease,
+    transform 120ms ease;
+}
+
+.ui-button:hover {
+  transform: translateY(-1px);
+}
+
+.ui-button:active {
+  transform: scale(0.97);
+}
+
+/* =========================
+   Focus (접근성 + 고급스러움)
+========================= */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 110, 245, 0.5);
 }

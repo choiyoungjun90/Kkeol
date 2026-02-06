@@ -176,3 +176,60 @@ CREATE TRIGGER on_vote_removed
   AFTER DELETE ON public.votes
   FOR EACH ROW EXECUTE PROCEDURE public.handle_vote_removed();
 $$
+
+---
+
+추후 추가된 vote
+// ...existing code...
+
+---
+
+## 🔧 Supabase 설정 (필수 조치)
+
+### 1. 익명 로그인(Anonymous Auth) 활성화
+
+익명 로그인이 비활성화되어 있으면 `AuthApiError: Anonymous sign-ins are disabled` 오류가 발생합니다.
+
+1. [Supabase Dashboard](https://supabase.com/dashboard) 접속
+2. **Authentication** > **Providers** 이동
+3. **Anonymous** 섹션 클릭
+4. **Allow anonymous sign-ins** 스위치를 **ON**으로 변경 후 저장
+
+### 2. 신규 테이블 및 권한 설정 SQL
+
+SQL Editor에서 아래 명령어를 실행하여 투표 기능을 위한 테이블과 RLS(보안 정책)를 설정합니다.
+
+```sql
+-- 1. debates 테이블 생성 (투표 주제)
+CREATE TABLE IF NOT EXISTS public.debates (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    stock_code TEXT NOT NULL,
+    stock_name TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- 2. debate_votes 테이블 생성 (실제 투표 기록)
+CREATE TABLE IF NOT EXISTS public.debate_votes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    debate_id UUID REFERENCES public.debates(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    vote_type TEXT CHECK (vote_type IN ('BUY', 'SELL')) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    UNIQUE(user_id, debate_id) -- 중복 투표 방지
+);
+
+-- 3. RLS 정책 설정
+ALTER TABLE public.debates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.debate_votes ENABLE ROW LEVEL SECURITY;
+
+-- 조회 정책: 누구나 가능
+CREATE POLICY "Anyone can view debates" ON public.debates FOR SELECT USING (true);
+CREATE POLICY "Anyone can view debate votes" ON public.debate_votes FOR SELECT USING (true);
+
+-- 작성 정책: 인증된 유저(익명 포함)만 가능
+CREATE POLICY "Auth users can create debates" ON public.debates FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Auth users can vote" ON public.debate_votes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own vote" ON public.debate_votes FOR UPDATE USING (auth.uid() = user_id);
+```

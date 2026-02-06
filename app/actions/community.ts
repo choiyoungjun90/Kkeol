@@ -3,40 +3,50 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function createPostAction(formData: {
-  title: string;
-  content: string;
-  stock_code?: string;
-}) {
+async function getAuthUser() {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  let { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    console.error("Auth Error:", authError);
-    throw new Error("인증에 실패했습니다. 다시 시도해주세요.");
+  if (!user) {
+    const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
+    if (anonError) {
+      console.error("Anonymous Sign-in Error:", anonError);
+      if (anonError.message.includes("disabled")) {
+        throw new Error("익명 로그인이 비활성화되어 있습니다. Supabase 대시보드에서 Anonymous Providers를 활성화해주세요.");
+      }
+      throw new Error("인증에 실패했습니다. 다시 시도해주세요.");
+    }
+    user = anonData.user;
   }
+
+  if (!user) throw new Error("인증에 실패했습니다.");
 
   // Safety net: Ensure profile exists (in case trigger failed)
   const { data: profile } = await supabase
     .from("profiles")
     .select("id")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile) {
-    await supabase
-      .from("profiles")
-      .insert([
-        {
-          id: user.id,
-          nickname: `익명_${user.id.substring(0, 5)}`,
-          is_anonymous: true,
-        },
-      ]);
+    await supabase.from("profiles").insert([
+      {
+        id: user.id,
+        nickname: `익명_${user.id.substring(0, 5)}`,
+        is_anonymous: true,
+      },
+    ]);
   }
+
+  return { supabase, user };
+}
+
+export async function createPostAction(formData: {
+  title: string;
+  content: string;
+  stock_code?: string;
+}) {
+  const { supabase, user } = await getAuthUser();
 
   const { data, error: insertError } = await supabase
     .from("posts")
@@ -65,31 +75,7 @@ export async function createDebateAction(formData: {
   stock_name: string;
   description: string;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("로그인이 필요합니다.");
-
-  // Safety net: Ensure profile exists
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
-    await supabase
-      .from("profiles")
-      .insert([
-        {
-          id: user.id,
-          nickname: `익명_${user.id.substring(0, 5)}`,
-          is_anonymous: true,
-        },
-      ]);
-  }
+  const { supabase, user } = await getAuthUser();
 
   const { data, error } = await supabase
     .from("debates")
@@ -142,8 +128,10 @@ export async function getDebatesAction() {
     const userVote =
       votes.find((v: any) => v.user_id === user?.id)?.vote_type || null;
 
+    const { debate_votes, ...debateData } = debate;
+
     return {
-      ...debate,
+      ...debateData,
       buyCount,
       sellCount,
       userVote,
@@ -155,31 +143,7 @@ export async function castVoteAction(
   debateId: string,
   voteType: "BUY" | "SELL",
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("로그인이 필요합니다.");
-
-  // Safety net: Ensure profile exists
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
-    await supabase
-      .from("profiles")
-      .insert([
-        {
-          id: user.id,
-          nickname: `익명_${user.id.substring(0, 5)}`,
-          is_anonymous: true,
-        },
-      ]);
-  }
+  const { supabase, user } = await getAuthUser();
 
   const { error } = await supabase
     .from("debate_votes")
@@ -219,22 +183,20 @@ export async function getPostsAction() {
   }
 
   // Map data to include counts and user-specific states
-  return (data || []).map((post) => ({
-    ...post,
-    comment_count: post.comments?.length || 0,
-    user_has_liked: !!post.votes?.some(
-      (v: any) => v.user_id === user?.id && v.vote_type === "LIKE",
-    ),
-  }));
+  return (data || []).map((post) => {
+    const { votes, comments, ...postData } = post;
+    return {
+      ...postData,
+      comment_count: comments?.length || 0,
+      user_has_liked: !!votes?.some(
+        (v: any) => v.user_id === user?.id && v.vote_type === "LIKE",
+      ),
+    };
+  });
 }
 
 export async function toggleLikeAction(postId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("로그인이 필요합니다.");
+  const { supabase, user } = await getAuthUser();
 
   // Check if already liked
   const { data: existingVote } = await supabase
@@ -263,12 +225,7 @@ export async function createCommentAction(
   content: string,
   parentId?: string,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("로그인이 필요합니다.");
+  const { supabase, user } = await getAuthUser();
 
   const { data, error } = await supabase.from("comments").insert([
     {

@@ -39,7 +39,10 @@ export class YahooFinanceProvider implements IStockProvider {
 
       // 2. Fallback to Yahoo Finance Search (Global)
       // Only search Yahoo if no local match or if query seems like a ticker/English
-      const result: any = await yahooFinance.search(query);
+      const trimmedQuery = query.trim();
+      if (!trimmedQuery) return localResults;
+
+      const result: any = await yahooFinance.search(trimmedQuery);
 
       if (!result.quotes) return [];
 
